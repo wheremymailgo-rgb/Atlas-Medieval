@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+ <meta charset="UTF-8" />
+ <meta
+   name="viewport"
+   content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+ />
+ <meta name="apple-mobile-web-app-capable" content="yes" />
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+ <meta name="apple-mobile-web-app-title" content="Atlas Medieval" />
+ <meta name="application-name" content="Atlas Medieval" />
+ <meta name="theme-color" content="#120904" />
+ <title>Atlas Medieval • Anno Domini DCCCLX</title>
+
+ <!-- PWA App Icon & Touch Target (Using your master artwork) -->
+ <link rel="apple-touch-icon" href="image.png" />
+ <link rel="icon" type="image/png" href="image.png" />
+
+ <!-- Google Fonts: Historical Display Typography -->
+ <link rel="preconnect" href="https://fonts.googleapis.com" />
+ <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+ <link
+   href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=UnifrakturMaguntia&family=MedievalSharp&display=swap"
+   rel="stylesheet"
+ />
+
+ <style>
+   * {
+     box-sizing: border-box;
+     margin: 0;
+     padding: 0;
+     -webkit-touch-callout: none;
+     -webkit-user-select: none;
+     user-select: none;
+   }
+
+   body, html {
+     width: 100%;
+     height: 100%;
+     overflow: hidden;
+     background-color: #120904;
+     font-family: -apple-system, BlinkMacSystemFont, "Cinzel", "Georgia", serif;
+     color: #2b1807;
+   }
+
+   #viewport {
+     position: relative;
+     width: 100vw;
+     height: 100vh;
+     touch-action: none;
+   }
+
+   canvas {
+     position: absolute;
+     top: 0;
+     left: 0;
+     width: 100%;
+     height: 100%;
+   }
+
+   .vignette {
+     position: absolute;
+     inset: 0;
+     pointer-events: none;
+     box-shadow: inset 0 0 100px rgba(25, 12, 4, 0.8), inset 0 0 200px rgba(5, 2, 0, 0.95);
+     mix-blend-mode: multiply;
+     z-index: 2;
+   }
+
+   /* ======================================================== */
+   /* 1. TITLE SCREEN: CHANCELLERY OAK TABLE & ARTWORK FOLIO   */
+   /* ======================================================== */
+   .title-viewport {
+     position: fixed;
+     inset: 0;
+     z-index: 1000;
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     background-color: #0d0603;
+     overflow-y: auto;
+     padding: 16px 12px;
+     transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s ease;
+   }
+   .title-viewport.dismissed {
+     opacity: 0;
+     pointer-events: none;
+     transform: scale(1.04);
+   }
+
+   .table-surface {
+     position: absolute;
+     inset: 0;
+     background: repeating-linear-gradient(
+       90deg,
+       #150903 0px,
+       #221006 45px,
+       #140803 48px,
+       #241208 95px,
+       #120702 100px
+     );
+     box-shadow: inset 0 0 160px rgba(0, 0, 0, 0.98);
+   }
+
+   .torchlight-flicker {
+     position: absolute;
+     inset: 0;
+     background: radial-gradient(
+       circle at 40% 35%,
+       rgba(255, 155, 50, 0.22) 0%,
+       rgba(180, 70, 10, 0.08) 52%,
+       rgba(0, 0, 0, 0.85) 100%
+     );
+     mix-blend-mode: screen;
+     animation: flameBreath 5s infinite alternate ease-in-out;
+     pointer-events: none;
+   }
+
+   @keyframes flameBreath {
+     0% { opacity: 0.8; transform: scale(1); }
+     50% { opacity: 1; transform: scale(1.02) translate(3px, -2px); }
+     100% { opacity: 0.85; transform: scale(0.99) translate(-2px, 2px); }
+   }
+
+   /* Central Folio Card */
+   .parchment-sheet {
+     position: relative;
+     width: 100%;
+     max-width: 480px;
+     background: #ebd8af;
+     border-radius: 8px;
+     padding: 14px;
+     box-shadow:
+       0 25px 65px rgba(0, 0, 0, 0.95),
+       inset 0 0 40px rgba(120, 70, 20, 0.3);
+     border: 2px solid #6b431e;
+     z-index: 5;
+     margin: auto;
+   }
+
+   /* Master Artwork Frame */
+   .atlas-artwork-card {
+     position: relative;
+     width: 100%;
+     border-radius: 6px;
+     overflow: hidden;
+     border: 2px solid #4a280c;
+     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+     margin-bottom: 12px;
+     background-color: #0d0603;
+   }
+
+   .atlas-artwork-img {
+     width: 100%;
+     height: auto;
+     display: block;
+     object-fit: cover;
+     filter: contrast(1.05) brightness(0.98);
+   }
+
+   /* Menu Buttons */
+   .menu-stack {
+     display: flex;
+     flex-direction: column;
+     gap: 8px;
+   }
+   .btn-menu {
+     position: relative;
+     width: 100%;
+     padding: 11px 14px;
+     display: flex;
+     align-items: center;
+     gap: 10px;
+     border-radius: 6px;
+     font-family: "Cinzel", "Georgia", serif;
+     font-size: 0.86rem;
+     font-weight: 800;
+     letter-spacing: 1.5px;
+     text-transform: uppercase;
+     cursor: pointer;
+     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+     transition: transform 0.12s ease, filter 0.12s ease;
+   }
+   .btn-menu:active {
+     transform: scale(0.98);
+     filter: brightness(0.92);
+   }
+   .btn-badge {
+     font-size: 0.95rem;
+   }
+   .btn-text {
+     flex: 1;
+     text-align: left;
+   }
+   .btn-detail {
+     font-size: 0.65rem;
+     font-weight: 700;
+     letter-spacing: 0.5px;
+     opacity: 0.8;
+   }
+
+   .seal-continue {
+     background: #2b3b24;
+     background-image: linear-gradient(135deg, #374b2f, #1e2b19);
+     color: #ecfccb;
+     border: 1.5px solid #142010;
+   }
+   .seal-continue:disabled {
+     opacity: 0.45;
+     filter: grayscale(0.7);
+     cursor: not-allowed;
+   }
+   .seal-primary {
+     background: #881337;
+     background-image: radial-gradient(circle at 30% 30%, #a81c45, #630b24);
+     color: #fef3c7;
+     border: 1.5px solid #4a081a;
+   }
+   .seal-secondary {
+     background: #f3e6ca;
+     color: #3b2007;
+     border: 1.5px solid #7c5832;
+   }
+   .seal-quit {
+     background: #241a15;
+     color: #d1c2b7;
+     border: 1.5px solid #140e0b;
+   }
+
+   /* Sub-Panels */
+   .sub-panel {
+     text-align: left;
+     display: flex;
+     flex-direction: column;
+     gap: 7px;
+     padding: 4px;
+   }
+   .panel-header {
+     font-family: "Cinzel", "Georgia", serif;
+     font-size: 0.9rem;
+     font-weight: 800;
+     text-transform: uppercase;
+     color: #881337;
+     border-bottom: 1px solid rgba(136, 19, 55, 0.3);
+     padding-bottom: 4px;
+     margin-bottom: 4px;
+   }
+   .panel-desc {
+     font-size: 0.76rem;
+     line-height: 1.4;
+     color: #4a2d12;
+     margin-bottom: 6px;
+   }
+   .input-label {
+     font-size: 0.66rem;
+     font-weight: 700;
+     text-transform: uppercase;
+     letter-spacing: 0.5px;
+     color: #66411d;
+   }
+   .parchment-input, .parchment-select {
+     width: 100%;
+     padding: 9px 11px;
+     background: #f7eed7;
+     border: 1.5px solid #855d36;
+     border-radius: 5px;
+     font-family: inherit;
+     font-size: 0.85rem;
+     color: #291504;
+     box-shadow: inset 0 2px 4px rgba(0,0,0,0.08);
+   }
+   .parchment-input:focus, .parchment-select:focus {
+     outline: none;
+     border-color: #881337;
+     background: #fff9ee;
+   }
+   .panel-actions {
+     display: flex;
+     gap: 8px;
+     margin-top: 6px;
+   }
+   .btn-sub-action {
+     flex: 1;
+     padding: 10px;
+     font-family: "Cinzel", "Georgia", serif;
+     font-size: 0.78rem;
+     font-weight: 800;
+     text-transform: uppercase;
+     letter-spacing: 1px;
+     border-radius: 5px;
+     cursor: pointer;
+   }
+   .btn-sub-action.confirm {
+     background: #881337;
+     color: #fff;
+     border: 1px solid #4a081a;
+   }
+   .btn-sub-action.secondary {
+     background: #7c5832;
+     color: #fff;
+     border: 1px solid #452e18;
+   }
+   .btn-sub-action.cancel {
+     background: #e2d2ae;
+     color: #3b2007;
+     border: 1px solid #7c5832;
+   }
+   .setting-row {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     padding: 6px 0;
+     border-bottom: 1px dashed rgba(120, 80, 40, 0.2);
+   }
+   .setting-label {
+     font-size: 0.78rem;
+     font-weight: 700;
+     color: #3b2007;
+   }
+
+   /* ======================================================== */
+   /* 2. IN-GAME HUD & ACTIVE ENGINE CONTROLS                  */
+   /* ======================================================== */
+   .header-bar {
+     position: absolute;
+     top: calc(env(safe-area-inset-top, 16px) + 8px);
+     left: 14px;
+     right: 14px;
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     padding: 8px 14px;
+     background: rgba(245, 236, 214, 0.94);
+     border: 1.5px solid #78522b;
+     border-radius: 10px;
+     box-shadow: 0 4px 18px rgba(0,0,0,0.6);
+     backdrop-filter: blur(10px);
+     z-index: 10;
+   }
+   .title-group {
+     display: flex;
+     flex-direction: column;
+   }
+   .title {
+     font-size: 0.85rem;
+     font-weight: 800;
+     letter-spacing: 1.5px;
+     text-transform: uppercase;
+     color: #3b2007;
+   }
+   .stats-pill {
+     font-size: 0.68rem;
+     font-weight: 700;
+     color: #78350f;
+   }
+   .header-actions {
+     display: flex;
+     gap: 6px;
+   }
+   .btn-seal {
+     background: #881337;
+     color: #fef3c7;
+     border: 1px solid #4c0519;
+     border-radius: 6px;
+     padding: 6px 10px;
+     font-size: 0.72rem;
+     font-weight: 700;
+     letter-spacing: 1px;
+     text-transform: uppercase;
+     cursor: pointer;
+   }
+   .btn-key {
+     background: #78522b;
+     color: #fff;
+     border: 1px solid #452a10;
+     border-radius: 6px;
+     padding: 6px 8px;
+     font-size: 0.72rem;
+     cursor: pointer;
+   }
+
+   /* Territory Dossier */
+   .dossier {
+     position: absolute;
+     left: 12px;
+     right: 12px;
+     bottom: calc(env(safe-area-inset-bottom, 16px) + 12px);
+     background: #f4ebd0;
+     border: 2px solid #543315;
+     border-radius: 12px;
+     padding: 14px 16px;
+     box-shadow: 0 12px 35px rgba(0,0,0,0.75);
+     transform: translateY(130%);
+     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+     z-index: 10;
+   }
+   .dossier.active {
+     transform: translateY(0);
+   }
+   .dossier-header {
+     display: flex;
+     justify-content: space-between;
+     align-items: center;
+     border-bottom: 1px solid #855f36;
+     padding-bottom: 6px;
+     margin-bottom: 8px;
+   }
+   .realm-name {
+     font-size: 1.05rem;
+     font-weight: 800;
+     color: #301704;
+     text-transform: uppercase;
+   }
+   .realm-rank {
+     font-size: 0.68rem;
+     font-weight: 700;
+     text-transform: uppercase;
+     padding: 2px 6px;
+     border-radius: 4px;
+     color: #fff;
+   }
+   .stats-grid {
+     display: grid;
+     grid-template-columns: 1fr 1fr;
+     gap: 6px 12px;
+     font-size: 0.78rem;
+   }
+   .stat-item {
+     display: flex;
+     flex-direction: column;
+   }
+   .stat-label {
+     font-size: 0.6rem;
+     color: #734e26;
+     text-transform: uppercase;
+     font-weight: 700;
+   }
+   .stat-value {
+     font-weight: 700;
+     color: #2b1706;
+   }
+   .action-row {
+     margin-top: 10px;
+     display: flex;
+     gap: 8px;
+   }
+   .btn-action {
+     flex: 1;
+     background: #451a03;
+     color: #fef3c7;
+     border: none;
+     border-radius: 6px;
+     padding: 8px;
+     font-size: 0.74rem;
+     font-weight: 700;
+     text-transform: uppercase;
+     letter-spacing: 0.5px;
+     cursor: pointer;
+   }
+
+   /* Modal Popups */
+   .modal-overlay {
+     position: absolute;
+     inset: 0;
+     background: rgba(0,0,0,0.65);
+     backdrop-filter: blur(4px);
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     padding: 20px;
+     z-index: 50;
+     opacity: 0;
+     pointer-events: none;
+     transition: opacity 0.25s ease;
+   }
+   .modal-overlay.active {
+     opacity: 1;
+     pointer-events: auto;
+   }
+   .modal-card {
+     width: 100%;
+     max-width: 440px;
+     background: #fbf5e6;
+     border: 3px double #78522b;
+     border-radius: 12px;
+     padding: 20px;
+     box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+     color: #2b1706;
+   }
+   .modal-title {
+     font-size: 1.1rem;
+     font-weight: 800;
+     text-transform: uppercase;
+     color: #881337;
+     border-bottom: 1px solid #78522b;
+     padding-bottom: 6px;
+     margin-bottom: 12px;
+     letter-spacing: 1px;
+   }
+   .modal-body {
+     font-size: 0.86rem;
+     line-height: 1.45;
+     margin-bottom: 16px;
+     color: #3b2007;
+   }
+   .modal-btn {
+     width: 100%;
+     background: #78522b;
+     color: #fff;
+     border: none;
+     padding: 10px;
+     border-radius: 6px;
+     font-weight: 700;
+     text-transform: uppercase;
+     cursor: pointer;
+   }
+ </style>
+</head>
+<body>
+ <div id="viewport">
+   <canvas id="mapCanvas"></canvas>
+   <div class="vignette"></div>
+
+   <!-- ======================================================== -->
+   <!-- TITLE SCREEN: WAR-TABLE WITH MASTER REALISTIC ARTWORK    -->
+   <!-- ======================================================== -->
+   <div id="titleScreen" class="title-viewport">
+     <div class="table-surface"></div>
+     <div class="torchlight-flicker"></div>
+
+     <div class="parchment-sheet">
+       <!-- Master Artwork Centerpiece -->
+       <div class="atlas-artwork-card">
+         <img
+           src="image.png"
+           alt="Atlas Medieval Map"
+           class="atlas-artwork-img"
+           onerror="this.style.display='none'; document.getElementById('fallbackHero').style.display='block';"
+         />
+         <!-- High-Fidelity Fallback if image fails to load -->
+         <div id="fallbackHero" style="display:none; padding:35px 20px; text-align:center; background:#eddcb5;">
+           <h1 style="font-family:'UnifrakturMaguntia', serif; font-size:3.2rem; color:#241004;">Atlas Medieval</h1>
+           <p style="font-size:0.8rem; font-weight:700; color:#881337; letter-spacing:3px;">ANNO DOMINI DCCCLX</p>
+         </div>
+       </div>
+
+       <!-- MAIN MENU BUTTON MATRIX -->
+       <div class="menu-stack" id="mainMenuButtons">
+         <button id="btnContinue" class="btn-menu seal-continue" onclick="handleContinue()">
+           <span class="btn-badge">✦</span>
+           <span class="btn-text">Continue</span>
+           <span class="btn-detail" id="continueDetail">Checking...</span>
+         </button>
+
+         <button class="btn-menu seal-primary" onclick="showMenuPanel('newJourneyPanel')">
+           <span class="btn-badge">✠</span>
+           <span class="btn-text">New Journey</span>
+         </button>
+
+         <button class="btn-menu seal-secondary" onclick="showMenuPanel('onlineAtlasPanel')">
+           <span class="btn-badge">⚔</span>
+           <span class="btn-text">Online Atlas</span>
+         </button>
+
+         <button class="btn-menu seal-secondary" onclick="showMenuPanel('settingsPanel')">
+           <span class="btn-badge">⚙</span>
+           <span class="btn-text">Settings</span>
+         </button>
+
+         <button class="btn-menu seal-quit" onclick="showMenuPanel('quitPanel')">
+           <span class="btn-badge">✕</span>
+           <span class="btn-text">Quit</span>
+         </button>
+       </div>
+
+       <!-- SUB-PANEL: NEW JOURNEY -->
+       <div class="sub-panel" id="newJourneyPanel" style="display: none;">
+         <div class="panel-header">Inaugurate Realm</div>
+         <label class="input-label" for="sovereignNameInput">Sovereign Ruler Name</label>
+         <input
+           type="text"
+           id="sovereignNameInput"
+           class="parchment-input"
+           placeholder="e.g., King Æthelred, Jarl Ivar, or Custom Name"
+           maxlength="32"
+         />
+
+         <label class="input-label" for="startingRealmSelect" style="margin-top: 6px;">Select Initial Throne</label>
+         <select id="startingRealmSelect" class="parchment-select">
+           <option value="wessex">Kingdom of Wessex (Anglo-Saxon)</option>
+           <option value="mercia">Kingdom of Mercia (Anglo-Saxon)</option>
+           <option value="danelaw">The Great Heathen Host (Norse)</option>
+           <option value="alba">Kingdom of Alba (Gaelic)</option>
+           <option value="west_francia">West Frankish Empire (Carolingian)</option>
+           <option value="brittany">Kingdom of Brittany (Breton)</option>
+           <option value="cordoba">Emirate of Córdoba (Andalusian)</option>
+           <option value="wari">Wari Imperial Seat (Andes)</option>
+           <option value="tang">Tang Empire Circuit (Cathay)</option>
+         </select>
+
+         <div class="panel-actions">
+           <button class="btn-sub-action confirm" onclick="startNewJourney()">Begin Campaign</button>
+           <button class="btn-sub-action cancel" onclick="showMenuPanel('mainMenuButtons')">Back</button>
+         </div>
+       </div>
+
+       <!-- SUB-PANEL: ONLINE ATLAS -->
+       <div class="sub-panel" id="onlineAtlasPanel" style="display: none;">
+         <div class="panel-header">Online Atlas • Multiplayer</div>
+         <p class="panel-desc">Host or join a synchronized 860 A.D. campaign session over Cloudflare edge signaling.</p>
+         <input type="text" id="realmLobbyCode" class="parchment-input" placeholder="Enter Realm Code (e.g. WESSEX-860)" />
+         <div class="panel-actions">
+           <button class="btn-sub-action confirm" onclick="connectOnlineRealm('join')">Join Realm</button>
+           <button class="btn-sub-action secondary" onclick="connectOnlineRealm('host')">Host Realm</button>
+         </div>
+         <button class="btn-sub-action cancel" style="width: 100%; margin-top: 6px;" onclick="showMenuPanel('mainMenuButtons')">Back</button>
+       </div>
+
+       <!-- SUB-PANEL: SETTINGS -->
+       <div class="sub-panel" id="settingsPanel" style="display: none;">
+         <div class="panel-header">Imperial Settings</div>
+         <label class="input-label" for="settingApiKey">Gemini Game Master API Key</label>
+         <input type="password" id="settingApiKey" class="parchment-input" placeholder="Google AI Studio Key (AIzaSy...)" />
+
+         <div class="setting-row">
+           <span class="setting-label">120 FPS ProMotion</span>
+           <input type="checkbox" id="toggle120" checked />
+         </div>
+         <div class="setting-row">
+           <span class="setting-label">Atmospheric Torchlight</span>
+           <input type="checkbox" id="toggleTorch" checked onchange="toggleTorchlight(this.checked)" />
+         </div>
+
+         <div class="panel-actions" style="margin-top: 8px;">
+           <button class="btn-sub-action confirm" onclick="saveSettings()">Save Changes</button>
+           <button class="btn-sub-action cancel" onclick="showMenuPanel('mainMenuButtons')">Back</button>
+         </div>
+       </div>
+
+       <!-- SUB-PANEL: QUIT MODAL -->
+       <div class="sub-panel" id="quitPanel" style="display: none;">
+         <div class="panel-header">Seal the Chronicle</div>
+         <p class="panel-desc">All realm borders and chronicles are preserved in local memory. Yield the war-table?</p>
+         <div class="panel-actions">
+           <button class="btn-sub-action confirm" onclick="confirmQuit()">Close Atlas</button>
+           <button class="btn-sub-action cancel" onclick="showMenuPanel('mainMenuButtons')">Remain</button>
+         </div>
+       </div>
+     </div>
+   </div>
+
+   <!-- ======================================================== -->
+   <!-- IN-GAME HUD & ACTIVE ENGINE CONTROLS                     -->
+   <!-- ======================================================== -->
+   <header class="header-bar">
+     <div class="title-group">
+       <div class="title" id="hudPlayerTitle">Atlas Medieval • 860 A.D.</div>
+       <div class="stats-pill" id="playerStats">Wessex: 5,400 Levies | 420 Gold</div>
+     </div>
+     <div class="header-actions">
+       <button class="btn-seal" onclick="triggerSeasonTurn()">End Season</button>
+       <button class="btn-key" onclick="openKeyModal()">⚙️</button>
+     </div>
+   </header>
+
+   <!-- Bottom Territory Dossier -->
+   <div class="dossier" id="dossier">
+     <div class="dossier-header">
+       <div class="realm-name" id="dossierName">Realm</div>
+       <div class="realm-rank" id="dossierRank">Kingdom</div>
+     </div>
+     <div class="stats-grid">
+       <div class="stat-item">
+         <span class="stat-label">Liege Sovereign</span>
+         <span class="stat-value" id="dossierRuler">-</span>
+       </div>
+       <div class="stat-item">
+         <span class="stat-label">Capital Castle</span>
+         <span class="stat-value" id="dossierCapital">-</span>
+       </div>
+       <div class="stat-item">
+         <span class="stat-label">Culture & Faith</span>
+         <span class="stat-value" id="dossierCulture">-</span>
+       </div>
+       <div class="stat-item">
+         <span class="stat-label">Garrison Host</span>
+         <span class="stat-value" id="dossierLevy">-</span>
+       </div>
+     </div>
+     <div class="action-row">
+       <button class="btn-action" onclick="executeRealmAction('Raid Border')">Raid Border</button>
+       <button class="btn-action" onclick="executeRealmAction('Send Emissary')">Send Emissary</button>
+     </div>
+   </div>
+
+   <!-- Game Master Modal -->
+   <div class="modal-overlay" id="gmModal">
+     <div class="modal-card">
+       <div class="modal-title" id="gmModalTitle">Royal Chronicle</div>
+       <div class="modal-body" id="gmModalBody">Evaluating the balance of power...</div>
+       <button class="modal-btn" onclick="closeModal()">Decree Accepted</button>
+     </div>
+   </div>
+
+   <!-- API Key Quick Modal -->
+   <div class="modal-overlay" id="keyModal">
+     <div class="modal-card">
+       <div class="modal-title">Oracle Key Vault</div>
+       <div class="modal-body">
+         <p style="margin-bottom:10px;">Paste your free Google AI Studio API Key to empower the living Gemini Game Master:</p>
+         <input type="password" id="quickApiKeyInput" placeholder="AIzaSy..." style="width:100%; padding:8px; border:1px solid #78522b; border-radius:4px; font-size:0.9rem;" />
+       </div>
+       <button class="modal-btn" onclick="saveQuickApiKey()">Save & Seal</button>
+     </div>
+   </div>
+
+   <!-- THE ROYAL SCRIBE PROTOCOL: Invisible Telemetry Node for Comet -->
+   <div id="royal-scribe-telemetry" style="display:none;" aria-live="polite">
+     <div id="comet-feed">Awaiting sovereign action...</div>
+   </div>
+ </div>
+
+ <!-- ======================================================== -->
+ <!-- JAVASCRIPT: ENGINE, HIT-TESTING, GM & TELEMETRY          -->
+ <!-- ======================================================== -->
+ <script>
+   const canvas = document.getElementById("mapCanvas");
+   const ctx = canvas.getContext("2d");
+   const dossier = document.getElementById("dossier");
+
+   const hitCanvas = document.createElement("canvas");
+   const hitCtx = hitCanvas.getContext("2d", { willReadFrequently: true });
+
+   let width, height, dpr;
+   let camera = { x: 0, y: 0, zoom: 1.3 };
+   let isDragging = false;
+   let dragStart = { x: 0, y: 0 };
+   let touchStartTime = 0;
+   let initialPinchDist = null;
+   let selectedRealm = null;
+
+   // Agnostic Dynamic Player State
+   window.gameState = {
+     player: {
+       name: localStorage.getItem("medieval_atlas_player_name") || "Sovereign Ruler",
+       realmTitle: "Kingdom of Wessex",
+       realmId: "wessex",
+       levies: 5400,
+       gold: 420
+     },
+     worldYear: 860,
+     season: "Autumn"
+   };
+
+   // Stage 1 Feudal Realm Geometry Database
+   const realms = [
+     {
+       id: 1,
+       pickColor: "#010000",
+       name: "Kingdom of Wessex",
+       rank: "Kingdom",
+       ruler: "The Crown (Player)",
+       capital: "Winchester",
+       culture: "Anglo-Saxon • Catholic",
+       levies: 5400,
+       mapColor: "#991b1b",
+       points: [[-130, 40], [-40, 45], [20, 60], [40, 100], [-10, 120], [-110, 110], [-160, 70]]
+     },
+     {
+       id: 2,
+       pickColor: "#020000",
+       name: "Kingdom of Mercia",
+       rank: "Kingdom",
+       ruler: "King Burgred",
+       capital: "Tamworth",
+       culture: "Anglo-Saxon • Catholic",
+       levies: 4100,
+       mapColor: "#1e40af",
+       points: [[-130, 40], [-70, -30], [-10, -20], [30, 25], [20, 60], [-40, 45]]
+     },
+     {
+       id: 3,
+       pickColor: "#030000",
+       name: "Great Heathen Host",
+       rank: "Viking Host",
+       ruler: "Ivar the Boneless",
+       capital: "Jorvik (York)",
+       culture: "Norse • Asatru",
+       levies: 6800,
+       mapColor: "#374151",
+       points: [[-70, -30], [-30, -120], [60, -90], [70, -10], [30, 25], [-10, -20]]
+     },
+     {
+       id: 4,
+       pickColor: "#040000",
+       name: "Kingdom of Alba",
+       rank: "Kingdom",
+       ruler: "King Causantín I",
+       capital: "Scone",
+       culture: "Gaelic • Catholic",
+       levies: 3600,
+       mapColor: "#065f46",
+       points: [[-80, -130], [-40, -230], [20, -220], [40, -140], [-30, -120]]
+     },
+     {
+       id: 5,
+       pickColor: "#050000",
+       name: "West Frankish Empire",
+       rank: "Empire",
+       ruler: "Charles the Bald",
+       capital: "Paris",
+       culture: "Frankish • Catholic",
+       levies: 14500,
+       mapColor: "#166534",
+       points: [[30, 140], [150, 130], [180, 220], [140, 290], [10, 270], [-20, 190]]
+     },
+     {
+       id: 6,
+       pickColor: "#060000",
+       name: "Kingdom of Brittany",
+       rank: "Kingdom",
+       ruler: "King Salomon",
+       capital: "Rennes",
+       culture: "Breton • Catholic",
+       levies: 3200,
+       mapColor: "#d97706",
+       points: [[-80, 160], [20, 140], [-10, 190], [-90, 200]]
+     }
+   ];
+
+   function resize() {
+     dpr = window.devicePixelRatio || 1;
+     width = window.innerWidth;
+     height = window.innerHeight;
+
+     canvas.width = width * dpr;
+     canvas.height = height * dpr;
+     ctx.scale(dpr, dpr);
+
+     hitCanvas.width = width;
+     hitCanvas.height = height;
+
+     render();
+   }
+
+   function drawParchment(targetCtx) {
+     targetCtx.fillStyle = "#eddcb6";
+     targetCtx.fillRect(0, 0, width, height);
+
+     targetCtx.save();
+     targetCtx.fillStyle = "rgba(100, 60, 20, 0.035)";
+     for (let x = 0; x < width; x += 28) {
+       for (let y = 0; y < height; y += 28) {
+         if ((x + y) % 56 === 0) targetCtx.fillRect(x, y, 28, 28);
+       }
+     }
+     targetCtx.restore();
+   }
+
+   function render() {
+     ctx.clearRect(0, 0, width, height);
+     hitCtx.clearRect(0, 0, width, height);
+
+     drawParchment(ctx);
+
+     ctx.save();
+     ctx.translate(width / 2 + camera.x, height / 2 + camera.y);
+     ctx.scale(camera.zoom, camera.zoom);
+
+     hitCtx.save();
+     hitCtx.translate(width / 2 + camera.x, height / 2 + camera.y);
+     hitCtx.scale(camera.zoom, camera.zoom);
+
+     realms.forEach(realm => {
+       hitCtx.beginPath();
+       realm.points.forEach((pt, i) => {
+         if (i === 0) hitCtx.moveTo(pt[0], pt[1]);
+         else hitCtx.lineTo(pt[0], pt[1]);
+       });
+       hitCtx.closePath();
+       hitCtx.fillStyle = realm.pickColor;
+       hitCtx.fill();
+
+       ctx.beginPath();
+       realm.points.forEach((pt, i) => {
+         if (i === 0) ctx.moveTo(pt[0], pt[1]);
+         else ctx.lineTo(pt[0], pt[1]);
+       });
+       ctx.closePath();
+
+       const isSelected = selectedRealm?.id === realm.id;
+       ctx.fillStyle = realm.mapColor;
+       ctx.globalAlpha = isSelected ? 0.6 : 0.32;
+       ctx.fill();
+
+       ctx.globalAlpha = 1.0;
+       ctx.lineWidth = isSelected ? 3.5 : 1.6;
+       ctx.strokeStyle = isSelected ? "#881337" : "#3b1e08";
+       ctx.lineJoin = "round";
+       ctx.stroke();
+
+       const center = getCentroid(realm.points);
+       ctx.font = "bold 10px 'Cinzel', Georgia, serif";
+       ctx.fillStyle = "#2d1604";
+       ctx.textAlign = "center";
+       ctx.textBaseline = "middle";
+       ctx.fillText(realm.name.toUpperCase(), center.x, center.y);
+     });
+
+     ctx.restore();
+     hitCtx.restore();
+   }
+
+   function getCentroid(pts) {
+     let x = 0, y = 0;
+     pts.forEach(p => { x += p[0]; y += p[1]; });
+     return { x: x / pts.length, y: y / pts.length };
+   }
+
+   window.addEventListener("touchstart", (e) => {
+     touchStartTime = Date.now();
+     if (e.touches.length === 1) {
+       isDragging = true;
+       dragStart = { x: e.touches[0].clientX - camera.x, y: e.touches[0].clientY - camera.y };
+     } else if (e.touches.length === 2) {
+       isDragging = false;
+       initialPinchDist = Math.hypot(
+         e.touches[0].clientX - e.touches[1].clientX,
+         e.touches[0].clientY - e.touches[1].clientY
+       );
+     }
+   }, { passive: true });
+
+   window.addEventListener("touchmove", (e) => {
+     if (isDragging && e.touches.length === 1) {
+       camera.x = e.touches[0].clientX - dragStart.x;
+       camera.y = e.touches[0].clientY - dragStart.y;
+       render();
+     } else if (e.touches.length === 2 && initialPinchDist) {
+       const dist = Math.hypot(
+         e.touches[0].clientX - e.touches[1].clientX,
+         e.touches[0].clientY - e.touches[1].clientY
+       );
+       const factor = dist / initialPinchDist;
+       camera.zoom = Math.min(Math.max(camera.zoom * factor, 0.5), 4.5);
+       initialPinchDist = dist;
+       render();
+     }
+   }, { passive: true });
+
+   window.addEventListener("touchend", (e) => {
+     const touchDuration = Date.now() - touchStartTime;
+     if (e.changedTouches.length === 1 && touchDuration < 250) {
+       const touch = e.changedTouches[0];
+       const pixel = hitCtx.getImageData(touch.clientX, touch.clientY, 1, 1).data;
+       const hitId = pixel[0];
+
+       const hitRealm = realms.find(r => r.id === hitId);
+       selectRealm(hitRealm || null);
+     }
+     isDragging = false;
+     initialPinchDist = null;
+   });
+
+   function selectRealm(realm) {
+     selectedRealm = realm;
+     if (realm) {
+       document.getElementById("dossierName").innerText = realm.name;
+       document.getElementById("dossierRank").innerText = realm.rank;
+       document.getElementById("dossierRank").style.backgroundColor = realm.mapColor;
+       document.getElementById("dossierRuler").innerText = realm.ruler;
+       document.getElementById("dossierCapital").innerText = realm.capital;
+       document.getElementById("dossierCulture").innerText = realm.culture;
+       document.getElementById("dossierLevy").innerText = realm.levies.toLocaleString() + " Troops";
+       dossier.classList.add("active");
+     } else {
+       dossier.classList.remove("active");
+     }
+     syncCometTelemetry();
+     render();
+   }
+
+   function syncCometTelemetry() {
+     const p = window.gameState.player;
+     const target = selectedRealm ? `${selectedRealm.name} (Ruler: ${selectedRealm.ruler}, Troops: ${selectedRealm.levies.toLocaleString()})` : "None (Panoramic View)";
+     
+     const feed = document.getElementById("comet-feed");
+     feed.innerText = `ATLAS MEDIEVAL TELEMETRY: Active Sovereign is ${p.name} of ${p.realmTitle} (${p.levies.toLocaleString()} levies, ${p.gold} gold). Era: ${window.gameState.season} ${window.gameState.worldYear} A.D. Selected Target: ${target}.`;
+   }
+
+   async function executeRealmAction(actionType) {
+     if (!selectedRealm) return;
+     showModal("Consulting the Oracle...", `Dispatching messengers: ${actionType} against ${selectedRealm.name}.`);
+
+     const apiKey = localStorage.getItem("king_pyr_gemini_key");
+     if (!apiKey) {
+       setTimeout(() => {
+         const outcome = Math.random() > 0.45 ? "Success" : "Complication";
+         if (outcome === "Success") {
+           window.gameState.player.gold += 50;
+           showModal("Decree Fulfilled", `Your forces skirmished across ${selectedRealm.name}'s border, securing 50 silver pounds with minimal loss.`);
+         } else {
+           window.gameState.player.levies = Math.max(0, window.gameState.player.levies - 120);
+           showModal("Ambush in the Mist", `Outriders from ${selectedRealm.ruler} ambushed your vanguard. 120 spearmen were lost.`);
+         }
+         updateUI();
+       }, 550);
+       return;
+     }
+
+     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+     const prompt = `You are the impartial Game Master for an authentic 860 A.D. grand strategy game titled Atlas Medieval.
+Player Character: ${window.gameState.player.name} of ${window.gameState.player.realmTitle} (Levies: ${window.gameState.player.levies}, Gold: ${window.gameState.player.gold}).
+Target: ${selectedRealm.name} (Ruler: ${selectedRealm.ruler}, Garrison: ${selectedRealm.levies}).
+Action: ${actionType}.
+Current Era: ${window.gameState.season} ${window.gameState.worldYear} A.D.
+
+Evaluate this action impartially based on 9th-century logistics, terrain, and risk. Return STRICT JSON with:
+{
+ "title": "Short evocative title",
+ "dispatch": "2-3 sentences describing the historical outcome",
+ "levy_change": integer delta for player,
+ "gold_change": integer delta for player
+}`;
+
+     try {
+       const res = await fetch(endpoint, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+           contents: [{ parts: [{ text: prompt }] }],
+           generationConfig: { responseMimeType: "application/json" }
+         })
+       });
+       const data = await res.json();
+       const result = JSON.parse(data.candidates[0].content.parts[0].text);
+
+       window.gameState.player.levies = Math.max(0, window.gameState.player.levies + (result.levy_change || 0));
+       window.gameState.player.gold = Math.max(0, window.gameState.player.gold + (result.gold_change || 0));
+
+       showModal(result.title, result.dispatch);
+       updateUI();
+     } catch (err) {
+       showModal("The Messenger Returned", "The frontier was quiet; no decisive contact was made.");
+     }
+   }
+
+   function triggerSeasonTurn() {
+     const seasons = ["Spring", "Summer", "Autumn", "Winter"];
+     let idx = seasons.indexOf(window.gameState.season);
+     if (idx === 3) {
+       window.gameState.season = "Spring";
+       window.gameState.worldYear += 1;
+     } else {
+       window.gameState.season = seasons[idx + 1];
+     }
+     window.gameState.player.gold += 50;
+
+     saveCurrentChronicle();
+     showModal("Season Turnover", `The realm enters ${window.gameState.season} of ${window.gameState.worldYear} A.D. Bailiffs have gathered 50 silver pounds in tithes.`);
+     updateUI();
+   }
+
+   function updateUI() {
+     const p = window.gameState.player;
+     document.getElementById("hudPlayerTitle").innerText = `${p.name} • ${window.gameState.worldYear} A.D.`;
+     document.getElementById("playerStats").innerText = `${p.realmTitle}: ${p.levies.toLocaleString()} Levies | ${p.gold} Gold`;
+     syncCometTelemetry();
+   }
+
+   function checkSavedChronicle() {
+     const saved = localStorage.getItem("medieval_atlas_save");
+     const btnContinue = document.getElementById("btnContinue");
+     const detail = document.getElementById("continueDetail");
+
+     if (saved) {
+       try {
+         const parsed = JSON.parse(saved);
+         btnContinue.disabled = false;
+         detail.innerText = `${parsed.player.realmTitle} (${parsed.year})`;
+       } catch (e) {
+         btnContinue.disabled = true;
+         detail.innerText = "Corrupted";
+       }
+     } else {
+       btnContinue.disabled = true;
+       detail.innerText = "No Chronicle";
+     }
+
+     const key = localStorage.getItem("king_pyr_gemini_key") || "";
+     document.getElementById("settingApiKey").value = key;
+     document.getElementById("quickApiKeyInput").value = key;
+   }
+
+   function showMenuPanel(panelId) {
+     const panels = ["mainMenuButtons", "newJourneyPanel", "onlineAtlasPanel", "settingsPanel", "quitPanel"];
+     panels.forEach(p => {
+       const el = document.getElementById(p);
+       if (el) el.style.display = (p === panelId) ? "flex" : "none";
+     });
+   }
+
+   function handleContinue() {
+     const saved = localStorage.getItem("medieval_atlas_save");
+     if (!saved) return;
+     
+     const parsed = JSON.parse(saved);
+     window.gameState.player = parsed.player;
+     window.gameState.worldYear = parsed.year;
+     window.gameState.season = parsed.season;
+
+     updateUI();
+     dismissTitleScreen();
+   }
+
+   function startNewJourney() {
+     const rawName = document.getElementById("sovereignNameInput").value.trim();
+     const select = document.getElementById("startingRealmSelect");
+     const realmId = select.value;
+     const realmName = select.options[select.selectedIndex].text;
+
+     const sovereignName = rawName || "Sovereign Ruler";
+
+     window.gameState.player.name = sovereignName;
+     window.gameState.player.realmTitle = realmName;
+     window.gameState.player.realmId = realmId;
+     window.gameState.player.levies = 5400;
+     window.gameState.player.gold = 420;
+     window.gameState.worldYear = 860;
+     window.gameState.season = "Autumn";
+
+     saveCurrentChronicle();
+     updateUI();
+     dismissTitleScreen();
+   }
+
+   function saveCurrentChronicle() {
+     const saveObject = {
+       player: window.gameState.player,
+       year: window.gameState.worldYear,
+       season: window.gameState.season
+     };
+     localStorage.setItem("medieval_atlas_save", JSON.stringify(saveObject));
+   }
+
+   function connectOnlineRealm(mode) {
+     const codeInput = document.getElementById("realmLobbyCode").value.trim();
+     const lobbyCode = codeInput || "REALM-860";
+     alert(`[Atlas Online Relay] ${mode === 'host' ? 'Hosting' : 'Joining'} realm session: ${lobbyCode}. Connecting to Cloudflare signaling...`);
+   }
+
+   function saveSettings() {
+     const key = document.getElementById("settingApiKey").value.trim();
+     if (key) {
+       localStorage.setItem("king_pyr_gemini_key", key);
+       document.getElementById("quickApiKeyInput").value = key;
+     }
+     showMenuPanel("mainMenuButtons");
+   }
+
+   function saveQuickApiKey() {
+     const val = document.getElementById("quickApiKeyInput").value.trim();
+     if (val) {
+       localStorage.setItem("king_pyr_gemini_key", val);
+       document.getElementById("settingApiKey").value = val;
+     }
+     document.getElementById("keyModal").classList.remove("active");
+   }
+
+   function toggleTorchlight(enabled) {
+     const torch = document.querySelector(".torchlight-flicker");
+     if (torch) torch.style.display = enabled ? "block" : "none";
+   }
+
+   function confirmQuit() {
+     window.location.href = "about:blank";
+   }
+
+   function dismissTitleScreen() {
+     const screen = document.getElementById("titleScreen");
+     screen.classList.add("dismissed");
+     setTimeout(() => {
+       screen.style.display = "none";
+     }, 800);
+     syncCometTelemetry();
+   }
+
+   function showModal(title, body) {
+     document.getElementById("gmModalTitle").innerText = title;
+     document.getElementById("gmModalBody").innerText = body;
+     document.getElementById("gmModal").classList.add("active");
+   }
+   function closeModal() {
+     document.getElementById("gmModal").classList.remove("active");
+   }
+   function openKeyModal() {
+     document.getElementById("quickApiKeyInput").value = localStorage.getItem("king_pyr_gemini_key") || "";
+     document.getElementById("keyModal").classList.add("active");
+   }
+
+   window.addEventListener("resize", resize);
+   window.addEventListener("DOMContentLoaded", () => {
+     resize();
+     checkSavedChronicle();
+     updateUI();
+   });
+ </script>
+</body>
+</html>
